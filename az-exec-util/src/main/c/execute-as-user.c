@@ -80,7 +80,6 @@ int change_user(char *username, uid_t user, gid_t group) {
 }
 
 int main(int argc, char **argv){
-
     // set up the logging stream
     if (!LOGFILE){
         LOGFILE=stdout;
@@ -111,12 +110,26 @@ int main(int argc, char **argv){
         return SETUID_OPER_FAILED;
     }
 
+
+
+    // ===============hack code start===============
+    char *current_kerberos_tgt_path = getenv("KRB5CCNAME");
+    fprintf(LOGFILE,"i am gonna do the fucking kerberos kinit command, tgt path is : %s\n",current_kerberos_tgt_path);
+    // Allocates storage
+    char *kinit_command = (char*)malloc(500 * sizeof(char));
+
+    sprintf(kinit_command, "kinit %s/%s@HAIXUE.COM -k -t /home/%s/.%s.keytab -c %s", username, username,username,username,current_kerberos_tgt_path);
+    fprintf(LOGFILE,"final kinit command is : %s\n",kinit_command);
+    system(kinit_command);
+    // ===============hack code end===============
+
     // execute the command
     char **user_argv = &argv[2];
     fprintf(LOGFILE, "user command starting from: %s\n", user_argv[0]);
     fflush(LOGFILE);
     retval = execvp(*user_argv, user_argv);
     fprintf(LOGFILE, "system call return value: %d\n", retval);
+
 
     // sometimes system(cmd) returns 256, which is interpreted to 0, making a failed job a successful job
     // hence this goofy piece of if statement.
